@@ -61,8 +61,7 @@ int checkVersion(){
     lpComm->AddRef();
 	//设置参数
 	lpComm->SetConfig("futu","server",DEFAULT_LOGIN_HOST_PORT);
- 
-	lpComm->SetConfig("futu","biz_license_str",DEFAULT_LICENSE_STR);
+ 	lpComm->SetConfig("futu","biz_license_str",DEFAULT_LICENSE_STR);
     if(0 !=	lpComm->SetConfig("futu","comm_license_file",DEFAULT_LICENSE_FILENAME)){
         cout<<"license file failed"<<endl;
     }
@@ -299,56 +298,24 @@ int marketMake(){
 }
 
 int run(){
-	/*
-	vector<char*> parameters;
-    parameters.push_back(DEFAULT_LOGIN_USERNAME);
-    parameters.push_back(DEFAULT_LOGIN_PASSWORD);
-    loadConfig("Config.txt", parameters);
-    */
+	if (FATAL_ERROR_CODE == checkVersion()){
+		cout << "Version Error, exit" << endl;
+		return FATAL_ERROR_CODE;
+	}
 
 	TradeServer server(DEFAULT_LOGIN_HOST_PORT, DEFAULT_LICENSE_STR, DEFAULT_LICENSE_FILENAME);
 	server.start(DEFAULT_LOGIN_USERNAME, DEFAULT_LOGIN_PASSWORD, new CMyCallBack());
 	IHsFutuComm* lpComm = server.getServerInstance();
-	
-
-    if(FATAL_ERROR_CODE == checkVersion()){
-        cout<<"Version Error, exit"<<endl;
-        return FATAL_ERROR_CODE;
-    }
-
-	/*
-	//新建通信对象
-	IHsFutuComm* lpComm = getYongAnHSCommInstance();
-	gAutoConnectHandleEvent = CreateEvent(NULL,TRUE,FALSE,NULL);
-	//创建自动重连线程
-	HANDLE hThread = CreateThread(NULL,0,auto_connect,lpComm,0,NULL);
-
-	//初始化接口对象
-	CMyCallBack* callback = new CMyCallBack();
-	if(FATAL_ERROR_CODE == initEnvirenment(lpComm, callback)){
-        cout<<"init envirenment error"<<endl;
-        return FATAL_ERROR_CODE;
-    }
-	*/
-
 
 	//订阅一下行情或者回报
 	lpComm->SubscribeRequest(SingleCode,Subscription,ALLWWW);
-	//lpComm->SubscribeRequest(SingleCode,Subscription,"CF205");
 	lpComm->SubscribeRequest(RspReport,Subscription,DEFAULT_LOGIN_USERNAME);
-	//lpComm->SubscribeRequest(CombinCode,Subscription,"ALLWWW");
-    //lpComm->SubscribeRequest(OnlineMsg,Subscription,USER_NAME);
 
-	
-    
-    //release resource
-    //int r = sendSyncSingleOrder(lpComm);
 	pause();
-	
-    
+  
     
     //退订登出释放资源
-    cout<<"continue to exit!"<<endl;
+    cout<<"press any key to exit!"<<endl;
 	pause();
 
 	char filename[64];
