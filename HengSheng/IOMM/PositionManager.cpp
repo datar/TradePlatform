@@ -29,6 +29,30 @@ int PositionManager::addPosition(IFuRecord* positionRec){
     return 1;
 }
 
+//IO contract is like IO1405-C-1950
+int PositionManager::initPairs(vector<string> &contracts){
+	char tempContract[16];
+	string putChar = "P";
+	ArbitragePair tempPair;
+	for (vector<string>::iterator it = contracts.begin(); it != contracts.end(); it++){
+		if (it->size() != 13){
+			continue;
+		}
+		if (it->at(7) == 'C' && it->at(0) == 'I'){
+			tempPair.legFirst.contract = *it;
+			tempPair.legFirst.destVolume = 0;
+			tempPair.legFirst.volume = 0;
+			strcpy(tempContract, it->c_str());
+			tempContract[7] = 'P';
+			tempPair.legSecond.contract = tempContract;
+			tempPair.legSecond.destVolume = 0;
+			tempPair.legSecond.volume = 0;
+			pairs.push_back(tempPair);
+		}
+	}
+	return pairs.size();
+}
+
 void showPosition(PositionManager& positionManage){
     size_t len = positionManage.positions.size();
     for(size_t i = 0; i < len; i++){

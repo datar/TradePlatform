@@ -24,10 +24,15 @@ void QuoteSystem::addHSQuote(string timeStr, QuoteData* info){
 void QuoteSystem::addQuoteData2Map(string timeStr, QuoteData* info){
     string contract = info->contract_code;
     quoteMap[contract].push_back(*info);
-    char msg[32];
-    sprintf(msg, "%s has %d ticks", contract.c_str(), quoteMap[contract].size());
-    Messages.addMessage(msg);
 }
+
+/*
+void QuoteSystem::showStatus(){
+	char msg[32];
+	sprintf(msg, "%s has %d ticks", contract.c_str(), quoteMap[contract].size());
+	Messages.addMessage(msg);
+}
+*/
 
 void QuoteSystem::bak2File(const char* filename){
     ofstream of(filename, ios::app);
@@ -35,6 +40,14 @@ void QuoteSystem::bak2File(const char* filename){
         of<<tickTimes[i].QuadPart<<","<<QuoteData2Str(data[i])<<endl;
     }
     of.close();
+}
+
+void QuoteSystem::saveContractList(const char* filename){
+	ofstream of(filename, ios::app);
+	for (size_t i = 0; i < contracts.size(); i++){
+		of << contracts[i] << endl;
+	}
+	of.close();
 }
 
 string QuoteData2Str(QuoteData &info){

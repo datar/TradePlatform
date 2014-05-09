@@ -30,13 +30,15 @@ public:
 
 class QuoteSystem{
 
-public:
+public:					
     QuoteSystem();
     void addHSQuote(string timeStr, QuoteData* info);
 	void addHSQuote(LARGE_INTEGER tickTime, QuoteData* info);
-    void bak2File(const char* filename);
-
-    void addQuoteData2Map(string timeStr, QuoteData* info);
+	void addQuoteData2Map(string timeStr, QuoteData* info);
+	
+	void bak2File(const char* filename);
+	void saveContractList(const char* filename);
+    
 
     double GetPrice(const char* contract, QUOTE_PRICE priceType);
     int GetQuantity(const char* contract, QUOTE_QUANTITY quantityType);

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "Constants.h" 
 #include "HsFutures.h"
 #include "HSUtils.h"
@@ -35,12 +38,14 @@ public:
     //bool hasStart();
     //bool hasConnect();
     IHsFutuComm* getServerInstance();
-
     int refreshPosition();
     int checkContractCode();
+	int getContractList(vector<string> &contractList);
+	int runCoreStrategy();
+
 private:
     int initServer(char* serverIpPort, char* lisenceStr, char* lisenceFilename);
-
+	int Arbitrage(ArbitragePair& pair);
 
 public:
     char loginName[HS_USERNAME_MAX_LENGTH];

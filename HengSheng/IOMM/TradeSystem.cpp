@@ -111,6 +111,106 @@ int TradeServer::checkContractCode(){
     return 0;
 }
 
+int TradeServer::getContractList(vector<string> &contractList){
+	IFuMessage* reqMsg = NewFuMessage(MSG_TYPE_GET_MARKET_DATA, MSG_MODE_REQUEST);
+	IFuMessage* ansMsg = NewFuMessage();
+	IFuRecord* record = reqMsg->AddRecord();
+	record->SetString(MSG_REC_NAME_FUND_ACCOUNT, loginName);
+	record->SetInt(MSG_REC_NAME_REQUEST_NUM, 10000);
+	//record->SetString(MSG_REC_NAME_FUTU_EXCH_TYPE, "F4");
+	//record->SetString("futures_account", "");
+
+	SendSyncMessage(server, reqMsg, ansMsg);
+
+	int posNum = ansMsg->GetCount();
+	for (int i = 0; i < posNum; i++){
+		IFuRecord* contract = ansMsg->GetRecord(i);
+		//Messages.print("%s::%s::%.2f", contract->GetString(MSG_REC_NAME_CONTRACT_CODE), contract->GetString(MSG_REC_NAME_NATIVE_CODE), contract->GetDouble(MSG_REC_NAME_FUTU_HIGH_PRICE));
+		contractList.push_back(contract->GetString(MSG_REC_NAME_NATIVE_CODE));
+	}
+	reqMsg->Release();
+	ansMsg->Release();
+
+	return positionManager.initPairs(contractList);
+}
+
+int TradeServer::Arbitrage(ArbitragePair& pair){
+	int result = 0;
+	double callBid = Quote.GetPrice(pair.legFirst.contract.c_str(), QUOTE_PRICE::BID_PRICE1);
+	double callAsk = Quote.GetPrice(pair.legFirst.contract.c_str(), QUOTE_PRICE::ASK_PRICE1);
+	double putBid = Quote.GetPrice(pair.legSecond.contract.c_str(), QUOTE_PRICE::BID_PRICE1);
+	double putAsk = Quote.GetPrice(pair.legSecond.contract.c_str(), QUOTE_PRICE::ASK_PRICE1);
+
+	if (callBid > 0 && putAsk > 0){
+		sendSyncSingleOrder(server,
+			DEFAULT_LOGIN_USERNAME,
+			DEFAULT_LOGIN_PASSWORD,
+			"F4",
+			"",
+			pair.legFirst.contract.c_str(),
+			"2",
+			"1",
+			"0",
+			"0",
+			callBid,
+			1,
+			"0");
+		sendSyncSingleOrder(server,
+			DEFAULT_LOGIN_USERNAME,
+			DEFAULT_LOGIN_PASSWORD,
+			"F4",
+			"",
+			pair.legSecond.contract.c_str(),
+			"1",
+			"1",
+			"0",
+			"0",
+			putAsk,
+			1,
+			"0");
+
+	}
+	else{
+		sendSyncSingleOrder(server,
+			DEFAULT_LOGIN_USERNAME,
+			DEFAULT_LOGIN_PASSWORD,
+			"F4",
+			"",
+			pair.legFirst.contract.c_str(),
+			"1",
+			"1",
+			"0",
+			"0",
+			callAsk,
+			1,
+			"0");
+		sendSyncSingleOrder(server,
+			DEFAULT_LOGIN_USERNAME,
+			DEFAULT_LOGIN_PASSWORD,
+			"F4",
+			"",
+			pair.legSecond.contract.c_str(),
+			"2",
+			"1",
+			"0",
+			"0",
+			putBid,
+			1,
+			"0");
+	}
+	return result;
+}
+
+int TradeServer::runCoreStrategy(){
+	for (size_t i = 0; i < positionManager.pairs.size(); i++){
+		ArbitragePair& pair = positionManager.pairs[i];
+		if (Arbitrage(pair)){
+			return 1;
+		}
+	}
+	return 0;
+}
+
 /*
 DWORD WINAPI TradeServer::autoConnect(void* connection){
 

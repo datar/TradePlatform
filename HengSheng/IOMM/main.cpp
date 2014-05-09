@@ -1,15 +1,9 @@
 /**********************************************************************
-源程序名称: sdk_demo.cpp
-软件著作权: 恒生电子股份有限公司
-系统名称  : 06版期货系统
-模块名称  : 恒生期货消息订阅接口
-功能说明  : HsFutuSDK示例程序
-作    者  : xdx
-开发日期  : 20110315
-备    注  : HsFutuSDK示例程序
-修改人员  ：
-修改日期  ：
-修改说明  : 20110315 创建
+
+Author:CHEN Xing
+Contact: im@chenxing.me
+create date:2013-04-27
+
 **********************************************************************/
 //#include <vld.h>
 #include <iostream>
@@ -297,7 +291,7 @@ int marketMake(){
     return 0;
 }
 
-int run(){
+int saveQuoteOnly(){
 	if (FATAL_ERROR_CODE == checkVersion()){
 		cout << "Version Error, exit" << endl;
 		return FATAL_ERROR_CODE;
@@ -333,113 +327,15 @@ int run(){
 
     return 0;
 }
-/*
-int test(){
-    vector<char*> parameters;
-    parameters.push_back(DEFAULT_LOGIN_USERNAME);
-    parameters.push_back(DEFAULT_LOGIN_PASSWORD);
-    loadConfig("Config.txt", parameters);
 
-    TradeServer server(DEFAULT_LOGIN_HOST_PORT, DEFAULT_LICENSE_STR, DEFAULT_LICENSE_FILENAME);
-    server.start(DEFAULT_LOGIN_USERNAME, DEFAULT_LOGIN_PASSWORD, new CMyCallBack());
-    server.getServerInstance()->SubscribeRequest(SingleCode,Subscription,ALLWWW);
-    server.getServerInstance()->SubscribeRequest(RspReport,Subscription,DEFAULT_LOGIN_USERNAME);
-    pause();
-
-    int total = 0;
-    do{
-        total = 0;
-        server.refreshPosition();
-
-        cout<<"long position"<<server.longPosition.size()<<endl;
-        cout<<"short position"<<server.shortPosition.size()<<endl;
-
-        for(map<string, int>::iterator it = server.longPosition.begin(); it != server.longPosition.end(); it++){
-            int pos = (*it).second;
-
-            total += pos;
-            double bid,ask;
-            int bidVol,askVol;
-            if(0 > getMarketPrice(server.getServerInstance(), (*it).first, server.loginName, bid,ask,bidVol,askVol)){
-                continue;
-            }
-
-            int lots = (bidVol>pos)?pos:bidVol;
-
-            if(lots == 0) continue;
-            cout<<"close "<<(*it).first<<" "<<lots<<" of "<<pos<<endl;
-            sendSyncSingleOrder(server.getServerInstance(),
-                server.loginName,
-                server.password,
-                "F4",
-                //server.loginName,
-                "",
-                (*it).first.c_str(),
-                "2",
-                "2",
-                "0",
-                "0",
-                bid,
-                lots,
-                "0");
-            
-        }
-    
-        for(map<string, int>::iterator it = server.shortPosition.begin(); it != server.shortPosition.end(); it++){
-            int pos = (*it).second;
-            total += pos;
-            double bid,ask;
-            int bidVol,askVol;
-            if( 0 > getMarketPrice(server.getServerInstance(), (*it).first, server.loginName, bid,ask,bidVol,askVol)){
-                continue;
-            }
-            int lots = (askVol>pos)?pos:askVol;
-            if(lots == 0) continue;
-            cout<<"close "<<(*it).first<<" "<<lots<<" of "<<pos<<endl;
-            sendSyncSingleOrder(server.getServerInstance(),
-                server.loginName,
-                server.password,
-                "F4",
-                //server.loginName,
-                "",
-                (*it).first.c_str(),
-                "1",
-                "2",
-                "0",
-                "0",
-                ask,
-                lots,
-                "0");
-            
-        }
-        Sleep(3000);
-    }while(total != 0);
-
-    //cout<<server.longPosition.size()<<endl;
-    //cout<<server.shortPosition.size()<<endl;
-    pause();
-    server.close();
-    return 0;
-}
-*/
 int showPosition(){ 
-    //vector<char*> parameters;
-    //parameters.push_back(DEFAULT_LOGIN_USERNAME);
-    //parameters.push_back(DEFAULT_LOGIN_PASSWORD);
-
-    //loadConfig("Config.txt", parameters);
-    //cout<<DEFAULT_LOGIN_USERNAME<<"::"<<DEFAULT_LOGIN_PASSWORD<<endl;
     TradeServer server(DEFAULT_LOGIN_HOST_PORT, DEFAULT_LICENSE_STR, DEFAULT_LICENSE_FILENAME);
     server.start(DEFAULT_LOGIN_USERNAME, DEFAULT_LOGIN_PASSWORD, new CMyCallBack());
-
-    //server.getServerInstance()->SubscribeRequest(SingleCode,Subscription,ALLWWW);
 
     server.getServerInstance()->SubscribeRequest(RspReport,Subscription,DEFAULT_LOGIN_USERNAME);
 
     Sleep(5000);
 
-    //server.refreshPosition();
-    //showPosition(server.positionManager);
     server.checkContractCode();
         
     pause();
@@ -449,8 +345,55 @@ int showPosition(){
     return 0;
 }
 
+
+
+int arbitrage(){
+	if (FATAL_ERROR_CODE == checkVersion()){
+		cout << "Version Error, exit" << endl;
+		return FATAL_ERROR_CODE;
+	}
+
+	TradeServer server(DEFAULT_LOGIN_HOST_PORT, DEFAULT_LICENSE_STR, DEFAULT_LICENSE_FILENAME);
+	server.start(DEFAULT_LOGIN_USERNAME, DEFAULT_LOGIN_PASSWORD, new CMyCallBack());
+	IHsFutuComm* lpComm = server.getServerInstance();
+
+
+	lpComm->SubscribeRequest(RspReport, Subscription, DEFAULT_LOGIN_USERNAME);
+	Sleep(5000);
+	
+	cout << "Getting Contract  Code!" << endl;
+	server.getContractList(Quote.contracts);
+	cout << "Num of contracts:" << Quote.contracts.size() << endl;
+	cout << "Num of pairs:" << server.positionManager.pairs.size() << endl;
+	pause();
+
+	//subscibe quote
+	lpComm->SubscribeRequest(SingleCode, Subscription, ALLWWW);
+	while (true){
+		server.runCoreStrategy();
+	}
+	//退订登出释放资源
+	cout << "press any key to exit!" << endl;
+	pause();
+
+	char filename[64];
+	TimeInfo::getNowTimeStr(filename);
+	strcat(filename, ".txt");
+	Quote.bak2File("QuoteSave.txt");
+	cout << "Quote has been saved!" << endl;
+
+	lpComm->SubscribeRequest(NAType, CxlAll, ALLWWW);
+	lpComm->DoLogout(DEFAULT_LOGIN_USERNAME);
+	//lpComm->DoLogout("");
+	//暂停等待登出结果
+	pause();
+	server.close();
+
+	return 0;
+}
+
 int main(void){
-    run();
+    arbitrage();
     return 0;
 }
 
